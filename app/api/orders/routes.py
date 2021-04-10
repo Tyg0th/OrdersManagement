@@ -12,6 +12,7 @@ from app.api.orders.models import (
     order_detail_schema,
     order_status_schema,
     order_schema,
+    orders_detail_get_schema,
     orders_schema
 )
 from app.api.clients.models import Clients
@@ -44,10 +45,8 @@ class OrderList(Resource):
             dump_order = order_schema.dump(order)
             dump_order["details"] = []
             query_details = OrderDetail.query.filter_by(order_id=order.id).all()
-            print(query_details)
-            dump_details = orders_detail_schema.dump(query_details)
+            dump_details = orders_detail_get_schema.dump(query_details)
             for dump_details in dump_details:
-
                 dump_order["details"].append(dump_details)
             response.append(dump_order)
 
