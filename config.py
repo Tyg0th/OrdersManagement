@@ -1,4 +1,5 @@
 import os
+import psycopg2
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -22,8 +23,12 @@ class DevelopmentConfig(Config):
 
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+    uri = os.getenv("DATABASE_URL")  # or other relevant config var
+    if uri.startswith("postgres://"):
+        uri = uri.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = uri or \
                               'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+    conn = psycopg2.connect(SQLALCHEMY_DATABASE_URI, sslmode='require')
 
     @classmethod
     def init_app(cls, app):
