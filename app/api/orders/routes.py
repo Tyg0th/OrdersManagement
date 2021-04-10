@@ -44,11 +44,13 @@ class OrderList(Resource):
             dump_order = order_schema.dump(order)
             dump_order["details"] = []
             query_details = OrderDetail.query.filter_by(order_id=order.id).all()
+            print(query_details)
             dump_details = orders_detail_schema.dump(query_details)
             for dump_details in dump_details:
-                dump_order["details"].append(dump_details)
 
+                dump_order["details"].append(dump_details)
             response.append(dump_order)
+
         return jsonify(response)
 
     @orders_api.expect(model)

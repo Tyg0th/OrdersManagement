@@ -42,6 +42,7 @@ class ProductsMetadata(ma.SQLAlchemySchema):
 class OrdersDetailSchema(ma.SQLAlchemySchema):
     class Meta:
         model = OrderDetail
+        fields = ('product_id', 'quantity', 'price')
     client_id = fields.Integer()
     products = fields.List(fields.Nested(ProductsMetadata))
 
