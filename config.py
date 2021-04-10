@@ -1,6 +1,6 @@
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
-
+import psycopg2
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'jGulUOWgqqJbtFBHAsbLyOFnjscBaWVr'
@@ -9,6 +9,7 @@ class Config:
         'DEV_DATABASE_URL') or 'sqlite:///' + os.path.join(basedir, 'data-dev-products.sqlite')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SSL_REDIRECT = False
+
 
     @staticmethod
     def init_app(app):
@@ -23,6 +24,7 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
                               'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+    conn = psycopg2.connect(SQLALCHEMY_DATABASE_URI, sslmode='require')
 
     @classmethod
     def init_app(cls, app):
