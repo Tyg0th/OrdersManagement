@@ -1,6 +1,6 @@
 import json
 from app import db
-from flask import request, Response, jsonify
+from flask import request, Response, jsonify, make_response
 from flask_restx import Resource, fields, ValidationError, SchemaModel
 from . import orders_ns
 from app.api import api_restx as orders_api
@@ -64,7 +64,6 @@ class OrderList(Resource):
         ).first_or_404(
             description="Client not found"
         )
-
         for product in request_data['products']:
             query_product = Products.query.filter_by(
                 id=product['product_id'],
@@ -77,7 +76,7 @@ class OrderList(Resource):
         )
         db.session.add(new_order)
         db.session.flush()
-
+        detail_list = []
         for index, product in enumerate(request_data['products'], start=1):
             new_order_detail = OrderDetail(
                 id=index,
@@ -86,10 +85,11 @@ class OrderList(Resource):
                 quantity=product["quantity"],
                 price=product["price"]
             )
-            db.session.add(new_order_detail)
-            db.session.commit()
-
-        return Response(201)
+            detail_list.append(new_order_detail)
+        db.session.add_all(detail_list)
+        db.session.commit()
+        data = {'message': 'Created', 'code': 'SUCCESS'}
+        return make_response(jsonify(data), 201)
 
 
 @orders_api.doc(responses={404: "Product not found", 200: "Succesfully"})
@@ -128,4 +128,5 @@ class Order(Resource):
         query_order.db_status = False
         db.session.add(query_order)
         db.session.commit()
+
         return Response(200)
