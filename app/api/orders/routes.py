@@ -1,15 +1,26 @@
+import json
 from app import db
-from flask import request, Response
+from flask import request, Response, jsonify
 from flask_restx import Resource, fields, ValidationError, SchemaModel
 from . import orders_ns
 from app.api import api_restx as orders_api
-from app.api.orders.models import Orders, OrderStatus, OrderDetail, orders_detail_schema, order_detail_schema, order_status_schema
+from app.api.orders.models import (
+    Orders,
+    OrderStatus,
+    OrderDetail,
+    orders_detail_schema,
+    order_detail_schema,
+    order_status_schema,
+    order_schema,
+    orders_schema
+)
 from app.api.clients.models import Clients
 from ..products.models import Products
 
 product_order_model = orders_api.model('ProductMetadata', {
     'product_id': fields.Integer(required=True),
-    'quantity': fields.Integer(required=True, min=1)
+    'quantity': fields.Integer(required=True, min=1),
+    'price': fields.Float(required=True, min=1),
 })
 
 model = orders_api.model('OrdersModel', {
@@ -28,9 +39,19 @@ model_status = orders_api.model('OrderStatus', {
 class OrderList(Resource):
     def get(self):
         query_orders = Orders.query.filter_by(db_status=True).all()
-        print(query_orders)
-        return orders_detail_schema.dump(query_orders)
+        response = []
+        for order in query_orders:
+            dump_order = order_schema.dump(order)
+            dump_order["details"] = []
+            query_details = OrderDetail.query.filter_by(order_id=order.id).all()
+            dump_details = orders_detail_schema.dump(query_details)
+            for dump_details in dump_details:
+                dump_order["details"].append(dump_details)
 
+            response.append(dump_order)
+        return jsonify(response)
+
+    @orders_api.expect(model)
     def post(self):
         request_data = request.get_json()
         try:
@@ -63,12 +84,12 @@ class OrderList(Resource):
                 order_id=new_order.id,
                 product_id=product["product_id"],
                 quantity=product["quantity"],
-                price=1548
+                price=product["price"]
             )
             db.session.add(new_order_detail)
             db.session.commit()
 
-        return 201
+        return Response(201)
 
 
 @orders_api.doc(responses={404: "Product not found", 200: "Succesfully"})
@@ -76,7 +97,12 @@ class OrderList(Resource):
 class Order(Resource):
     def get(self, id):
         query_order = Orders.query.filter_by(db_status=True, id=id).first_or_404()
-        return order_detail_schema.dump(query_order)
+        response = {'order': order_schema.dump(query_order), 'details': []}
+        query_details = OrderDetail.query.filter_by(order_id=query_order.id).all()
+        dump_details = orders_detail_schema.dump(query_details)
+        for detail in dump_details:
+            response['details'].append(detail)
+        return jsonify(response)
 
     @orders_api.expect(model_status)
     def put(self, id):
@@ -84,7 +110,6 @@ class Order(Resource):
         try:
             result = order_status_schema.load(request_data)
         except (ValidationError, TypeError) as err:
-            print(err)
             return {"errors": err.messages}, 422
         query_order = Orders.query.filter_by(db_status=True, id=id).first_or_404()
         if request_data["status"] == "Solicitada":

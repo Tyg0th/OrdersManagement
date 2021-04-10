@@ -55,15 +55,15 @@ class Client(Resource):
         request_data = request.get_json()
         try:
             result = client_schema.load(request_data)
-        except ValidationError as err:
-            return jsonify(err.messages), 400
+        except (ValidationError, TypeError) as err:
+            return {"errors": err.messages}, 422
         query_client = Clients.query.filter_by(db_status=True, id=id).first_or_404()
         query_client.name = request_data["name"]
         query_client.address = request_data["address"]
         query_client.phone_number = request_data["phone_number"]
         query_client.email = request_data["email"]
         db.session.add(query_client)
-        db.session.comit()
+        db.session.commit()
         return Response(200)
 
     def delete(selfself, id):

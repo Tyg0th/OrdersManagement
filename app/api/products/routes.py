@@ -61,7 +61,7 @@ class Product(Resource):
         query_product.price = request_data["price"]
         query_product.stock = request_data["stock"]
         db.session.add(query_product)
-        db.session.comit()
+        db.session.commit()
         return Response(200)
 
     def delete(selfself, id):

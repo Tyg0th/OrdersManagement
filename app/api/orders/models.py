@@ -36,11 +36,13 @@ class ProductsMetadata(ma.SQLAlchemySchema):
         model = Products
     product_id = fields.Integer()
     quantity = fields.Integer()
+    price = fields.Float()
 
 
 class OrdersDetailSchema(ma.SQLAlchemySchema):
     class Meta:
         model = OrderDetail
+        fields = ('product_id', 'quantity', 'price')
     client_id = fields.Integer()
     products = fields.List(fields.Nested(ProductsMetadata))
 
@@ -48,6 +50,10 @@ class OrdersDetailSchema(ma.SQLAlchemySchema):
 class OrdersSchema(ma.SQLAlchemySchema):
     class Meta:
         model = Orders
+        fields = ['id', 'client', 'status', 'products']
+
+    status = fields.Function(lambda x: x.status.value)
+    products = fields.Nested(OrdersDetailSchema)
 
 
 class OrderStatusSchema(ma.Schema):
@@ -58,3 +64,5 @@ order_status_schema = OrderStatusSchema()
 order_detail_schema = OrdersDetailSchema()
 orders_detail_schema = OrdersDetailSchema(many=True)
 
+order_schema = OrdersSchema()
+orders_schema = OrdersSchema(many=True)
